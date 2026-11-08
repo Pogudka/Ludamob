@@ -20,7 +20,7 @@ pub struct App {
 
 impl App {
     pub fn new() -> Self {
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::default());
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
         Self {
             window: None,
             instance,
@@ -46,23 +46,24 @@ impl ApplicationHandler for App {
             .create_surface(window.clone())
             .expect("failed to create surface");
 
-        let adapter =
-            pollster::block_on(self.instance.request_adapter(&wgpu::RequestAdapterOptions {
+        let adapter = pollster::block_on(self.instance.request_adapter(
+            &wgpu::RequestAdapterOptions {
                 power_preference: wgpu::PowerPreference::default(),
                 compatible_surface: Some(&surface),
                 force_fallback_adapter: false,
-            }))
-            .expect("failed to find adapter");
-
-        let (device, queue) = pollster::block_on(adapter.request_device(
-            &wgpu::DeviceDescriptor {
-                label: None,
-                required_features: wgpu::Features::empty(),
-                required_limits: wgpu::Limits::default(),
-                memory_hints: wgpu::MemoryHints::default(),
+                apply_limit_buckets: false,
             },
-            None,
         ))
+        .expect("failed to find adapter");
+
+        let (device, queue) = pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
+            label: None,
+            required_features: wgpu::Features::empty(),
+            required_limits: wgpu::Limits::default(),
+            experimental_features: wgpu::ExperimentalFeatures::disabled(),
+            memory_hints: wgpu::MemoryHints::default(),
+            trace: wgpu::Trace::Off,
+        }))
         .expect("failed to create device");
 
         let size = window.inner_size();
@@ -82,6 +83,7 @@ impl ApplicationHandler for App {
             alpha_mode: caps.alpha_modes[0],
             view_formats: vec![],
             desired_maximum_frame_latency: 2,
+            color_space: wgpu::SurfaceColorSpace::Auto,
         };
         surface.configure(&device, &config);
 
@@ -121,9 +123,20 @@ impl ApplicationHandler for App {
                     return;
                 };
 
-                let frame = surface
-                    .get_current_texture()
-                    .expect("failed to acquire surface texture");
+                let frame = match surface.get_current_texture() {
+                    wgpu::CurrentSurfaceTexture::Success(t)
+                    | wgpu::CurrentSurfaceTexture::Suboptimal(t) => t,
+                    wgpu::CurrentSurfaceTexture::Outdated | wgpu::CurrentSurfaceTexture::Lost => {
+                        if let (Some(surface), Some(device), Some(config)) =
+                            (&self.surface, &self.device, &self.config)
+                        {
+                            surface.configure(device, config);
+                        }
+                        return;
+                    }
+                    _ => return,
+                };
+
                 let view = frame
                     .texture
                     .create_view(&wgpu::TextureViewDescriptor::default());
@@ -136,6 +149,7 @@ impl ApplicationHandler for App {
                         color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                             view: &view,
                             resolve_target: None,
+                            depth_slice: None,
                             ops: wgpu::Operations {
                                 load: wgpu::LoadOp::Clear(wgpu::Color {
                                     r: 0.1,
@@ -149,6 +163,7 @@ impl ApplicationHandler for App {
                         depth_stencil_attachment: None,
                         timestamp_writes: None,
                         occlusion_query_set: None,
+                        multiview_mask: None,
                     });
                 }
 
