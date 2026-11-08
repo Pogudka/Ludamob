@@ -6,6 +6,9 @@ use winit::event::WindowEvent;
 use winit::event_loop::{ActiveEventLoop, EventLoop};
 use winit::window::{Window, WindowId};
 
+#[cfg(target_os = "android")]
+use android_activity::AndroidApp;
+
 pub struct App {
     window: Option<Arc<Window>>,
     instance: wgpu::Instance,
@@ -165,8 +168,20 @@ impl ApplicationHandler for App {
     }
 }
 
+#[cfg(not(target_os = "android"))]
 pub fn run() {
     let event_loop = EventLoop::new().expect("failed to create event loop");
     let mut app = App::new();
     event_loop.run_app(&mut app).expect("failed to run app");
+}
+
+#[cfg(target_os = "android")]
+pub fn run_android(app: AndroidApp) {
+    use winit::platform::android::EventLoopBuilderExtAndroid;
+    let event_loop = EventLoop::builder()
+        .with_android_app(app)
+        .build()
+        .expect("failed to build event loop");
+    let mut app_handler = App::new();
+    event_loop.run_app(&mut app_handler).expect("failed to run app");
 }
