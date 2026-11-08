@@ -5,6 +5,12 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-winit = { workspace = true }
 wgpu = { workspace = true }
 pollster = { workspace = true }
+
+[target.'cfg(target_os = "android")'.dependencies]
+winit = { workspace = true, features = ["android-game-activity"] }
+android-activity = { workspace = true, features = ["game-activity"] }
+
+[target.'cfg(not(target_os = "android"))'.dependencies]
+winit = { workspace = true }
