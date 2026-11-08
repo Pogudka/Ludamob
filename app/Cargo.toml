@@ -4,5 +4,17 @@ name = "ludamob-app"
 version = "0.1.0"
 edition = "2024"
 
+[lib]
+name = "ludamob_app"
+crate-type = ["cdylib", "rlib"]
+path = "src/lib.rs"
+
+[[bin]]
+name = "ludamob-app"
+path = "src/main.rs"
+
 [dependencies]
 ludamob-window = { path = "../window" }
+
+[target.'cfg(target_os = "android")'.dependencies]
+android-activity = { workspace = true, features = ["game-activity"] }
