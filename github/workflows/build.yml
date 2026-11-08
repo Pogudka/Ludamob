@@ -1,0 +1,46 @@
+# path: .github/workflows/build.yml
+name: Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  check:
+    name: Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo fmt --check
+      - run: cargo clippy -- -D warnings
+      - run: cargo check --workspace
+
+  android:
+    name: Android
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
+      - uses: android-actions/setup-android@v3
+      - run: cargo install cargo-ndk
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.7"
+      - name: Build Rust for Android
+        run: cargo ndk -t arm64-v8a -o android/app/src/main/jniLibs build --release
+      - name: Build APK
+        run: gradle assembleDebug
+        working-directory: android
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ludamob-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
