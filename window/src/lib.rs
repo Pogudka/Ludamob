@@ -46,15 +46,14 @@ impl ApplicationHandler for App {
             .create_surface(window.clone())
             .expect("failed to create surface");
 
-        let adapter = pollster::block_on(self.instance.request_adapter(
-            &wgpu::RequestAdapterOptions {
+        let adapter =
+            pollster::block_on(self.instance.request_adapter(&wgpu::RequestAdapterOptions {
                 power_preference: wgpu::PowerPreference::default(),
                 compatible_surface: Some(&surface),
                 force_fallback_adapter: false,
                 apply_limit_buckets: false,
-            },
-        ))
-        .expect("failed to find adapter");
+            }))
+            .expect("failed to find adapter");
 
         let (device, queue) = pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
             label: None,
@@ -168,7 +167,7 @@ impl ApplicationHandler for App {
                 }
 
                 queue.submit(Some(encoder.finish()));
-                frame.present();
+                queue.present(frame);
             }
             WindowEvent::Resized(new_size) => {
                 if new_size.width > 0 && new_size.height > 0 {
@@ -210,4 +209,4 @@ pub fn run_android(app: AndroidApp) {
     event_loop
         .run_app(&mut app_handler)
         .expect("failed to run app");
-        }
+                }
