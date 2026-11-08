@@ -35,21 +35,24 @@ impl App {
 impl ApplicationHandler for App {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         let attrs = Window::default_attributes().with_title("Ludamob");
-        let window = Arc::new(event_loop.create_window(attrs).expect("failed to create window"));
+        let window = Arc::new(
+            event_loop
+                .create_window(attrs)
+                .expect("failed to create window"),
+        );
 
         let surface = self
             .instance
             .create_surface(window.clone())
             .expect("failed to create surface");
 
-        let adapter = pollster::block_on(self.instance.request_adapter(
-            &wgpu::RequestAdapterOptions {
+        let adapter =
+            pollster::block_on(self.instance.request_adapter(&wgpu::RequestAdapterOptions {
                 power_preference: wgpu::PowerPreference::default(),
                 compatible_surface: Some(&surface),
                 force_fallback_adapter: false,
-            },
-        ))
-        .expect("failed to find adapter");
+            }))
+            .expect("failed to find adapter");
 
         let (device, queue) = pollster::block_on(adapter.request_device(
             &wgpu::DeviceDescriptor {
@@ -108,9 +111,15 @@ impl ApplicationHandler for App {
                 event_loop.exit();
             }
             WindowEvent::RedrawRequested => {
-                let Some(surface) = self.surface.as_ref() else { return; };
-                let Some(device) = self.device.as_ref() else { return; };
-                let Some(queue) = self.queue.as_ref() else { return; };
+                let Some(surface) = self.surface.as_ref() else {
+                    return;
+                };
+                let Some(device) = self.device.as_ref() else {
+                    return;
+                };
+                let Some(queue) = self.queue.as_ref() else {
+                    return;
+                };
 
                 let frame = surface
                     .get_current_texture()
@@ -183,5 +192,7 @@ pub fn run_android(app: AndroidApp) {
         .build()
         .expect("failed to build event loop");
     let mut app_handler = App::new();
-    event_loop.run_app(&mut app_handler).expect("failed to run app");
-}
+    event_loop
+        .run_app(&mut app_handler)
+        .expect("failed to run app");
+        }
