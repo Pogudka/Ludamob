@@ -10,3 +10,4 @@ members = [
 winit = "0.30.13"
 wgpu = "30.0.1"
 pollster = "0.4.0"
+android-activity = "0.6"
