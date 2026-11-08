@@ -1,0 +1,12 @@
+# path: Cargo.toml
+[workspace]
+resolver = "2"
+members = [
+    "app",
+    "window",
+]
+
+[workspace.dependencies]
+winit = "0.30.13"
+wgpu = "30.0.1"
+pollster = "0.4.0"
