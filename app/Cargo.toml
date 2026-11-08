@@ -1,0 +1,8 @@
+# path: app/Cargo.toml
+[package]
+name = "ludamob-app"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+ludamob-window = { path = "../window" }
